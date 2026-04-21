@@ -12,6 +12,8 @@
 		B003 /* M3UEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A003 /* M3UEntry.swift */; };
 		B004 /* M3UParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A004 /* M3UParser.swift */; };
 		B005 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A005 /* ContentViewModel.swift */; };
+		B006 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A006 /* GroupsView.swift */; };
+		B007 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007 /* SearchBar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +23,8 @@
 		A003 /* M3UEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3UEntry.swift; sourceTree = "<group>"; };
 		A004 /* M3UParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3UParser.swift; sourceTree = "<group>"; };
 		A005 /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
+		A006 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
+		A007 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +54,8 @@
 				A003 /* M3UEntry.swift */,
 				A004 /* M3UParser.swift */,
 				A005 /* ContentViewModel.swift */,
+				A006 /* GroupsView.swift */,
+				A007 /* SearchBar.swift */,
 			);
 			path = PickyWatcher;
 			sourceTree = "<group>";
@@ -135,6 +141,8 @@
 				B003 /* M3UEntry.swift in Sources */,
 				B004 /* M3UParser.swift in Sources */,
 				B005 /* ContentViewModel.swift in Sources */,
+				B006 /* GroupsView.swift in Sources */,
+				B007 /* SearchBar.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

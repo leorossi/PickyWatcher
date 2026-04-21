@@ -1,18 +1,32 @@
 import SwiftUI
+import AppKit
+
+enum AppTab { case streams, groups }
 
 struct ContentView: View {
     @State private var vm = ContentViewModel()
     @State private var showFilePicker = false
     @State private var showExportPicker = false
+    @State private var activeTab: AppTab = .streams
 
     var body: some View {
         VStack(spacing: 0) {
             toolbar
             Divider()
-            if vm.entries.isEmpty {
+            if vm.isIndexing {
+                indexingView
+            } else if vm.entries.isEmpty {
                 emptyState
             } else {
-                entryList
+                switch activeTab {
+                case .streams: entryList
+                case .groups:
+                    GroupsView(
+                        groups: vm.filteredGroups,
+                        selectedGroupName: vm.selectedGroupName,
+                        onSelect: { vm.selectGroup($0) }
+                    )
+                }
             }
             if let err = vm.errorMessage {
                 errorBar(err)
@@ -32,7 +46,7 @@ struct ContentView: View {
             isPresented: $showExportPicker,
             document: M3UDocument(content: exportContent()),
             contentType: .init(filenameExtension: "m3u8")!,
-            defaultFilename: "export.m3u8"
+            defaultFilename: exportFilename()
         ) { result in
             if case .failure(let err) = result {
                 vm.errorMessage = err.localizedDescription
@@ -40,39 +54,105 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Subviews
+    // MARK: - Toolbar
 
     private var toolbar: some View {
         HStack(spacing: 12) {
             Button("Open…") { showFilePicker = true }
                 .keyboardShortcut("o")
 
-            if !vm.entries.isEmpty {
-                TextField("Search", text: $vm.searchQuery)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 300)
-
-                Spacer()
-
-                Text("\(vm.filtered.count) / \(vm.entries.count) entries")
-                    .foregroundStyle(.secondary)
-                    .font(.callout)
-
-                Button("Select All") { vm.selectAllFiltered() }
-                    .disabled(vm.filtered.isEmpty)
-
-                Button("Deselect All") { vm.deselectAll() }
-                    .disabled(vm.selection.isEmpty)
-
-                Button("Export \(vm.selectedCount > 0 ? "(\(vm.selectedCount))" : "")…") {
-                    showExportPicker = true
+            if !vm.entries.isEmpty && !vm.isIndexing {
+                Picker("", selection: $activeTab) {
+                    Text("Streams").tag(AppTab.streams)
+                    Text("Groups").tag(AppTab.groups)
                 }
-                .keyboardShortcut("s")
-                .disabled(vm.selection.isEmpty)
-                .buttonStyle(.borderedProminent)
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+
+                switch activeTab {
+                case .streams: streamsToolbarItems
+                case .groups: groupsToolbarItems
+                }
             }
         }
         .padding(10)
+    }
+
+    private var streamsToolbarItems: some View {
+        HStack(spacing: 12) {
+            SearchBar(
+                query: $vm.searchQuery,
+                isSearching: vm.isSearching,
+                onCommit: { vm.commitSearch() },
+                onClear: { vm.clearSearch() }
+            )
+
+            Spacer()
+
+            Text("\(vm.filtered.count) / \(vm.entries.count) streams")
+                .foregroundStyle(.secondary)
+                .font(.callout)
+                .monospacedDigit()
+
+            Button("Select All") { vm.selectAllFiltered() }
+                .disabled(vm.filtered.isEmpty)
+
+            Button("Deselect All") { vm.deselectAll() }
+                .disabled(vm.selection.isEmpty)
+
+            Button("Export \(vm.selectedCount > 0 ? "(\(vm.selectedCount))" : "")…") {
+                showExportPicker = true
+            }
+            .keyboardShortcut("s")
+            .disabled(vm.selection.isEmpty)
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var groupsToolbarItems: some View {
+        HStack(spacing: 12) {
+            SearchBar(
+                query: $vm.groupSearchQuery,
+                placeholder: "Search groups",
+                onCommit: { vm.commitGroupSearch() },
+                onClear: { vm.clearGroupSearch() }
+            )
+
+            Spacer()
+
+            Text("\(vm.filteredGroups.count) / \(vm.groupedEntries.count) groups")
+                .foregroundStyle(.secondary)
+                .font(.callout)
+                .monospacedDigit()
+
+            if let groupName = vm.selectedGroupName {
+                let count = vm.groupedEntries.first(where: { $0.name == groupName })?.entries.count ?? 0
+                Button("Export \"\(groupName.isEmpty ? "No Group" : groupName)\" (\(count))…") {
+                    showExportPicker = true
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                Button("Export Group…") { }
+                    .disabled(true)
+                    .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    // MARK: - Content views
+
+    private var indexingView: some View {
+        VStack(spacing: 16) {
+            Text("Indexing…")
+                .foregroundStyle(.secondary)
+            ProgressView(value: vm.indexingProgress)
+                .frame(maxWidth: 320)
+            Text("\(vm.indexedCount) / \(vm.indexingTotal) streams")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyState: some View {
@@ -89,10 +169,19 @@ struct ContentView: View {
     }
 
     private var entryList: some View {
-        List(vm.filtered, selection: $vm.selection) { entry in
-            EntryRow(entry: entry, isSelected: vm.selection.contains(entry.id))
+        ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: []) {
+                ForEach(vm.filtered) { entry in
+                    EntryRow(entry: entry, isSelected: vm.selection.contains(entry.id))
+                        .onTapGesture {
+                            vm.toggleSelection(entry.id, additive: NSEvent.modifierFlags.contains(.command))
+                        }
+                    Divider()
+                        .padding(.leading, 8)
+                }
+            }
         }
-        .listStyle(.inset)
+        .background(Color(NSColor.controlBackgroundColor))
     }
 
     private func errorBar(_ message: String) -> some View {
@@ -109,9 +198,29 @@ struct ContentView: View {
         .background(Color.red.opacity(0.1))
     }
 
+    // MARK: - Export helpers
+
     private func exportContent() -> String {
-        let toExport = vm.filtered.filter { vm.selection.contains($0.id) }
-        return M3UParser.serialize(header: vm.fileHeader, entries: toExport)
+        switch activeTab {
+        case .streams:
+            let toExport = vm.filtered.filter { vm.selection.contains($0.id) }
+            return M3UParser.serialize(header: vm.fileHeader, entries: toExport)
+        case .groups:
+            guard let groupName = vm.selectedGroupName else { return "" }
+            let toExport = vm.entries.filter { $0.group == groupName }
+            return M3UParser.serialize(header: vm.fileHeader, entries: toExport)
+        }
+    }
+
+    private func exportFilename() -> String {
+        switch activeTab {
+        case .streams:
+            return "export.m3u8"
+        case .groups:
+            let name = vm.selectedGroupName ?? "group"
+            let safe = name.isEmpty ? "no-group" : name.replacingOccurrences(of: "/", with: "-")
+            return "\(safe).m3u8"
+        }
     }
 }
 
@@ -120,6 +229,7 @@ struct ContentView: View {
 struct EntryRow: View {
     let entry: M3UEntry
     let isSelected: Bool
+    @State private var isHovered = false
 
     var body: some View {
         HStack {
@@ -140,7 +250,15 @@ struct EntryRow: View {
                 .truncationMode(.middle)
                 .frame(maxWidth: 200)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            isSelected
+                ? Color.accentColor.opacity(0.2)
+                : isHovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.07) : Color.clear
+        )
+        .onHover { isHovered = $0 }
     }
 }
 
