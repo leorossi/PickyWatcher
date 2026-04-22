@@ -80,7 +80,7 @@ final class ContentViewModel {
         print("[Search] scheduleFilter — allEntries count: \(allEntries.count)")
 
         filterTask = Task {
-            print("[Search] task started on thread: \(Thread.current)")
+            NSLog("[Search] task started on thread")
             guard !query.isEmpty else {
                 print("[Search] empty query — restoring full list (\(allEntries.count) entries)")
                 await MainActor.run {
@@ -153,7 +153,7 @@ final class ContentViewModel {
                     })
                 let total = max(1, (lines.count - 2) / 2)
                 let header = lines.first(where: { $0.hasPrefix("#EXTM3U") })
-                print("[] total lines: \(lines.count). Max Calculated = \(total)")
+
                 await MainActor.run { self.indexingTotal = total }
 
                 var parsedEntries: [M3UEntry] = []
@@ -171,7 +171,7 @@ final class ContentViewModel {
                         count += 1
                         if count % 500 == 0 {
                             let progress = Double(count) / Double(total)
-                            await MainActor.run {
+                            await MainActor.run { [count] in
                                 self.indexingProgress = min(progress, 0.99)
                                 self.indexedCount = count
                             }
@@ -183,7 +183,7 @@ final class ContentViewModel {
 
                 let grouped = Self.buildGroupedEntries(parsedEntries)
 
-                await MainActor.run {
+                await MainActor.run { [parsedEntries] in
                     self.fileHeader = header
                     self.entries = parsedEntries
                     self.filtered = parsedEntries
