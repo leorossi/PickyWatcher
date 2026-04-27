@@ -15,6 +15,14 @@
 		B006 /* GroupsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A006 /* GroupsView.swift */; };
 		B007 /* SearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A007 /* SearchBar.swift */; };
 		B008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A008 /* Assets.xcassets */; };
+		B009 /* ContentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A009 /* ContentToolbar.swift */; };
+		B010 /* DownloadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A010 /* DownloadingView.swift */; };
+		B011 /* IndexingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A011 /* IndexingView.swift */; };
+		B012 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A012 /* EmptyStateView.swift */; };
+		B013 /* EntryListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A013 /* EntryListView.swift */; };
+		B014 /* EntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A014 /* EntryRow.swift */; };
+		B015 /* ErrorBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A015 /* ErrorBarView.swift */; };
+		B016 /* M3UDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A016 /* M3UDocument.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +35,15 @@
 		A006 /* GroupsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupsView.swift; sourceTree = "<group>"; };
 		A007 /* SearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchBar.swift; sourceTree = "<group>"; };
 		A008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A009 /* ContentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentToolbar.swift; sourceTree = "<group>"; };
+		A010 /* DownloadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadingView.swift; sourceTree = "<group>"; };
+		A011 /* IndexingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndexingView.swift; sourceTree = "<group>"; };
+		A012 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		A013 /* EntryListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryListView.swift; sourceTree = "<group>"; };
+		A014 /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
+		A015 /* ErrorBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBarView.swift; sourceTree = "<group>"; };
+		A016 /* M3UDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3UDocument.swift; sourceTree = "<group>"; };
+		A017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +76,15 @@
 				A006 /* GroupsView.swift */,
 				A007 /* SearchBar.swift */,
 				A008 /* Assets.xcassets */,
+				A009 /* ContentToolbar.swift */,
+				A010 /* DownloadingView.swift */,
+				A011 /* IndexingView.swift */,
+				A012 /* EmptyStateView.swift */,
+				A013 /* EntryListView.swift */,
+				A014 /* EntryRow.swift */,
+				A015 /* ErrorBarView.swift */,
+				A016 /* M3UDocument.swift */,
+				A017 /* Info.plist */,
 			);
 			path = PickyWatcher;
 			sourceTree = "<group>";
@@ -147,6 +173,14 @@
 				B005 /* ContentViewModel.swift in Sources */,
 				B006 /* GroupsView.swift in Sources */,
 				B007 /* SearchBar.swift in Sources */,
+				B009 /* ContentToolbar.swift in Sources */,
+				B010 /* DownloadingView.swift in Sources */,
+				B011 /* IndexingView.swift in Sources */,
+				B012 /* EmptyStateView.swift in Sources */,
+				B013 /* EntryListView.swift in Sources */,
+				B014 /* EntryRow.swift in Sources */,
+				B015 /* ErrorBarView.swift in Sources */,
+				B016 /* M3UDocument.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,9 +320,8 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableDescription = "M3U playlist filter and exporter";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PickyWatcher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -317,9 +350,8 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableDescription = "M3U playlist filter and exporter";
-				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PickyWatcher/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
