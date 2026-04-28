@@ -8,7 +8,10 @@ struct ContentToolbar: View {
     var body: some View {
         HStack(spacing: 12) {
             if !vm.entries.isEmpty {
-                Button("Close") { vm.close() }
+                Button { vm.close() } label: {
+                    Label("Close", systemImage: "xmark.circle")
+                }
+                .buttonStyle(.bordered)
 
                 Picker("", selection: $activeTab) {
                     Text("Streams").tag(AppTab.streams)
@@ -37,10 +40,7 @@ struct ContentToolbar: View {
 
             Spacer()
 
-            Text("\(vm.filtered.count) / \(vm.entries.count) streams")
-                .foregroundStyle(.secondary)
-                .font(.callout)
-                .monospacedDigit()
+            countBadge(filtered: vm.filtered.count, total: vm.entries.count, label: "streams")
 
             Button("Select All") { vm.selectAllFiltered() }
                 .disabled(vm.filtered.isEmpty)
@@ -68,10 +68,7 @@ struct ContentToolbar: View {
 
             Spacer()
 
-            Text("\(vm.filteredGroups.count) / \(vm.groupedEntries.count) groups")
-                .foregroundStyle(.secondary)
-                .font(.callout)
-                .monospacedDigit()
+            countBadge(filtered: vm.filteredGroups.count, total: vm.groupedEntries.count, label: "groups")
 
             if let groupName = vm.selectedGroupName {
                 let count = vm.groupedEntries.first(where: { $0.name == groupName })?.entries.count ?? 0
@@ -85,5 +82,17 @@ struct ContentToolbar: View {
                     .buttonStyle(.borderedProminent)
             }
         }
+    }
+
+    private func countBadge(filtered: Int, total: Int, label: String) -> some View {
+        HStack(spacing: 3) {
+            Text("\(filtered)")
+                .fontWeight(.semibold)
+                .monospacedDigit()
+            Text("/ \(total) \(label)")
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .font(.callout)
     }
 }

@@ -33,40 +33,57 @@ struct GroupRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
-                } label: {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .frame(width: 14)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.borderless)
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .frame(width: 3)
+                    .padding(.vertical, 8)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(name.isEmpty ? "(No Group)" : name)
-                        .fontWeight(isSelected ? .semibold : .regular)
-                    Text("\(entries.count) streams")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                HStack(spacing: 8) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) { isExpanded.toggle() }
+                    } label: {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .frame(width: 14)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.borderless)
 
-                Spacer()
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(name.isEmpty ? "(No Group)" : name)
+                            .fontWeight(isSelected ? .semibold : .regular)
+                            .lineLimit(1)
+                    }
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
+                    Spacer()
+
+                    Text("\(entries.count)")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            (isSelected ? Color.accentColor : Color.secondary).opacity(0.12)
+                        )
+                        .clipShape(Capsule())
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .imageScale(.small)
+                    }
                 }
+                .padding(.vertical, 7)
+                .padding(.horizontal, 10)
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 isSelected
-                    ? Color.accentColor.opacity(0.18)
-                    : isHovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.07) : Color.clear
+                    ? Color.accentColor.opacity(0.1)
+                    : isHovered ? Color(NSColor.selectedContentBackgroundColor).opacity(0.06) : Color.clear
             )
+            .animation(.easeOut(duration: 0.1), value: isHovered)
             .contentShape(Rectangle())
             .onTapGesture { onSelect() }
             .onHover { isHovered = $0 }
@@ -78,14 +95,10 @@ struct GroupRow: View {
                             Text(entry.name)
                                 .font(.callout)
                                 .foregroundStyle(.primary)
+                                .lineLimit(1)
                             Spacer()
-                            if !entry.group.isEmpty {
-                                Text(entry.group)
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
                         }
-                        .padding(.vertical, 3)
+                        .padding(.vertical, 4)
                         .padding(.leading, 34)
                         .padding(.trailing, 10)
                         Divider().padding(.leading, 34)

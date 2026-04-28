@@ -5,48 +5,69 @@ struct EmptyStateView: View {
     var onOpenFile: () -> Void
 
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "doc.badge.plus")
-                .font(.system(size: 48))
+        VStack(spacing: 0) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 88, height: 88)
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 38, weight: .ultraLight))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.bottom, 16)
+
+            Text("PickyWatcher")
+                .font(.title2.weight(.bold))
+
+            Text("Filter and export M3U / M3U8 playlist streams")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
+                .padding(.bottom, 32)
 
-            Text("Open an M3U / M3U8 playlist to get started")
-                .foregroundStyle(.secondary)
+            GroupBox {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Download from URL", systemImage: "arrow.down.to.line")
+                        .font(.subheadline.weight(.medium))
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Download from URL")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    HStack(spacing: 8) {
+                        TextField("https://example.com/playlist.m3u8", text: $vm.downloadURLString)
+                            .textFieldStyle(.roundedBorder)
 
-                HStack(spacing: 8) {
-                    TextField("https://example.com/playlist.m3u8", text: $vm.downloadURLString)
-                        .textFieldStyle(.roundedBorder)
-
-                    Button("Download") {
-                        vm.download(from: vm.downloadURLString)
+                        Button {
+                            vm.download(from: vm.downloadURLString)
+                        } label: {
+                            Label("Download", systemImage: "arrow.down.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(vm.downloadURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(vm.downloadURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+                .padding(6)
             }
             .frame(maxWidth: 520)
 
-            HStack(spacing: 8) {
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundStyle(.quaternary)
-                Text("or")
-                    .foregroundStyle(.tertiary)
-                    .font(.caption)
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundStyle(.quaternary)
+            HStack {
+                VStack { Divider() }
+                Text("or").font(.caption).foregroundStyle(.tertiary).fixedSize()
+                VStack { Divider() }
             }
-            .frame(maxWidth: 240)
+            .frame(maxWidth: 260)
+            .padding(.vertical, 20)
 
-            Button("Open File…", action: onOpenFile)
-                .keyboardShortcut("o")
+            Button(action: onOpenFile) {
+                Label("Open File…", systemImage: "folder")
+            }
+            .keyboardShortcut("o")
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+
+            Spacer()
         }
+        .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
