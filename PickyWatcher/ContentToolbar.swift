@@ -5,6 +5,9 @@ struct ContentToolbar: View {
     @Binding var showExportPicker: Bool
     @Bindable var vm: ContentViewModel
 
+    @AppStorage("defaultPlayerBundleID") private var playerBundleID = "org.videolan.vlc"
+    private var playerShortName: String { resolvedPlayerName(for: playerBundleID) }
+
     var body: some View {
         HStack(spacing: 12) {
             if !vm.entries.isEmpty {
@@ -47,6 +50,15 @@ struct ContentToolbar: View {
 
             Button("Deselect All") { vm.deselectAll() }
                 .disabled(vm.selection.isEmpty)
+
+            if vm.selectedCount > 1 {
+                Button {
+                    vm.openSelectedInVLC()
+                } label: {
+                    Label("\(playerShortName) (\(vm.selectedCount))", systemImage: "play.rectangle.fill")
+                }
+                .help("Open \(vm.selectedCount) selected streams in \(playerShortName)")
+            }
 
             Button("Export \(vm.selectedCount > 0 ? "(\(vm.selectedCount))" : "")…") {
                 showExportPicker = true

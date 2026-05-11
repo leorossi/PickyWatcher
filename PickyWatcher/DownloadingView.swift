@@ -4,6 +4,7 @@ struct DownloadingView: View {
     var progress: Double
     var bytesTotal: Int64
     var progressText: String
+    var onStop: () -> Void
 
     var body: some View {
         VStack(spacing: 28) {
@@ -37,6 +38,14 @@ struct DownloadingView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+
+            Button(action: onStop) {
+                Label("Stop Download", systemImage: "stop.circle.fill")
+                    .font(.callout.weight(.medium))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .keyboardShortcut(.escape, modifiers: [])
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

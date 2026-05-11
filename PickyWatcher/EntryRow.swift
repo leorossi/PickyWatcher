@@ -4,6 +4,7 @@ import AppKit
 struct EntryRow: View {
     let entry: M3UEntry
     let isSelected: Bool
+    var onOpenVLC: (() -> Void)? = nil
     @State private var isHovered = false
 
     var body: some View {
@@ -33,6 +34,16 @@ struct EntryRow: View {
                 }
 
                 Spacer()
+
+                Button(action: { onOpenVLC?() }) {
+                    Image(systemName: "play.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Open in VLC")
+                .opacity(isHovered ? 1 : 0)
+                .allowsHitTesting(isHovered)
 
                 Text(entry.url)
                     .font(.caption2)

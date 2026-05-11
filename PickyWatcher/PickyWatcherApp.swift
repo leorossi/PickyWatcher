@@ -7,7 +7,11 @@ struct PickyWatcherApp: App {
             ContentView()
         }
         .commands {
-            CommandGroup(replacing: .newItem) { }
+            AppFileCommands()
+        }
+
+        Settings {
+            SettingsView()
         }
     }
 }

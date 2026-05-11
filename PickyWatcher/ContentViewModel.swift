@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import Observation
 
 @Observable
@@ -32,6 +33,8 @@ final class ContentViewModel {
     var downloadProgress: Double = 0.0
     var downloadBytesReceived: Int64 = 0
     var downloadBytesTotal: Int64 = 0
+    @ObservationIgnored private var downloadTask: Task<Void, Never>? = nil
+    @ObservationIgnored private var downloadSession: URLSession? = nil
 
     var downloadProgressText: String {
         let fmt = ByteCountFormatter()
@@ -92,6 +95,79 @@ final class ContentViewModel {
         }
     }
 
+    func selectRange(from fromIndex: Int, to toIndex: Int) {
+        let lower = min(fromIndex, toIndex)
+        let upper = max(fromIndex, toIndex)
+        guard lower >= 0, upper < filtered.count else { return }
+        filtered[lower...upper].forEach { selection.insert($0.id) }
+    }
+
+    func copySelectedURLs() {
+        let selected = filtered.filter { selection.contains($0.id) }
+        guard !selected.isEmpty else { return }
+        let text = selected.count == 1
+            ? selected[0].url
+            : M3UParser.serialize(header: fileHeader, entries: selected)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    private var defaultPlayerBundleID: String {
+        UserDefaults.standard.string(forKey: "defaultPlayerBundleID") ?? "org.videolan.vlc"
+    }
+
+    func openInVLC(entry: M3UEntry) {
+        guard let url = URL(string: entry.url) else {
+            errorMessage = "Invalid stream URL"
+            return
+        }
+        let bundleID = defaultPlayerBundleID
+        guard let playerURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            errorMessage = "\(resolvedPlayerName(for: bundleID)) is not installed"
+            return
+        }
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+        NSWorkspace.shared.open([url], withApplicationAt: playerURL, configuration: config) { [weak self] _, error in
+            if let error {
+                Task { @MainActor [weak self] in self?.errorMessage = "Failed to open player: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func openSelectedInVLC() {
+        let selected = filtered.filter { selection.contains($0.id) }
+        guard !selected.isEmpty else { return }
+        let bundleID = defaultPlayerBundleID
+        guard let playerURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            errorMessage = "\(resolvedPlayerName(for: bundleID)) is not installed"
+            return
+        }
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+
+        if selected.count == 1, let url = URL(string: selected[0].url) {
+            NSWorkspace.shared.open([url], withApplicationAt: playerURL, configuration: config) { [weak self] _, error in
+                if let error {
+                    Task { @MainActor [weak self] in self?.errorMessage = "Failed to open player: \(error.localizedDescription)" }
+                }
+            }
+        } else {
+            let content = M3UParser.serialize(header: fileHeader, entries: selected)
+            let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("pickywatcher_playlist.m3u8")
+            do {
+                try content.write(to: tmpURL, atomically: true, encoding: .utf8)
+                NSWorkspace.shared.open([tmpURL], withApplicationAt: playerURL, configuration: config) { [weak self] _, error in
+                    if let error {
+                        Task { @MainActor [weak self] in self?.errorMessage = "Failed to open player: \(error.localizedDescription)" }
+                    }
+                }
+            } catch {
+                errorMessage = "Failed to create temp playlist: \(error.localizedDescription)"
+            }
+        }
+    }
+
     private func scheduleFilter(query: String) {
         print("[Search] scheduleFilter — cancelling previous task, query: '\(query)'")
         filterTask?.cancel()
@@ -145,6 +221,37 @@ final class ContentViewModel {
         }
     }
 
+    // MARK: - Recent files
+
+    func addRecentFile(_ url: URL) {
+        guard let bookmarkData = try? url.bookmarkData(
+            options: .withSecurityScope,
+            includingResourceValuesForKeys: [.nameKey],
+            relativeTo: nil
+        ) else { return }
+        let entry = RecentFile(displayName: url.lastPathComponent, path: url.path, bookmarkData: bookmarkData)
+        var list = storedRecentFiles()
+        list.removeAll { $0.path == url.path }
+        list.insert(entry, at: 0)
+        if list.count > 10 { list = Array(list.prefix(10)) }
+        if let data = try? JSONEncoder().encode(list) {
+            UserDefaults.standard.set(data, forKey: "recentFiles")
+        }
+    }
+
+    func resolveRecentFile(path: String) -> URL? {
+        guard let entry = storedRecentFiles().first(where: { $0.path == path }) else { return nil }
+        var stale = false
+        return try? URL(resolvingBookmarkData: entry.bookmarkData,
+                        options: .withSecurityScope, relativeTo: nil,
+                        bookmarkDataIsStale: &stale)
+    }
+
+    private func storedRecentFiles() -> [RecentFile] {
+        guard let data = UserDefaults.standard.data(forKey: "recentFiles") else { return [] }
+        return (try? JSONDecoder().decode([RecentFile].self, from: data)) ?? []
+    }
+
     // MARK: - Close
 
     func close() {
@@ -180,7 +287,10 @@ final class ContentViewModel {
             do {
                 let raw = try String(contentsOf: url, encoding: .utf8)
                 if accessed { url.stopAccessingSecurityScopedResource() }
-                await MainActor.run { self.loadedFileURL = url }
+                await MainActor.run {
+                    self.loadedFileURL = url
+                    self.addRecentFile(url)
+                }
                 await self.parseAndIndex(raw: raw)
             } catch {
                 if accessed { url.stopAccessingSecurityScopedResource() }
@@ -193,6 +303,15 @@ final class ContentViewModel {
     }
 
     // MARK: - Download from URL
+
+    func cancelDownload() {
+        downloadTask?.cancel()
+        downloadSession?.invalidateAndCancel()
+        downloadSession = nil
+        downloadTask = nil
+        isDownloading = false
+        clearLoadedContent()
+    }
 
     func download(from urlString: String) {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -209,10 +328,13 @@ final class ContentViewModel {
         downloadBytesTotal = 0
         clearLoadedContent()
 
-        Task.detached(priority: .userInitiated) { [weak self] in
+        let session = URLSession(configuration: .default)
+        downloadSession = session
+
+        downloadTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
-                let (asyncBytes, response) = try await URLSession.shared.bytes(from: url)
+                let (asyncBytes, response) = try await session.bytes(from: url)
 
                 if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
                     await MainActor.run {
@@ -259,6 +381,10 @@ final class ContentViewModel {
 
                 await self.parseAndIndex(raw: raw)
 
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                await MainActor.run { self.isDownloading = false }
+            } catch is CancellationError {
+                await MainActor.run { self.isDownloading = false }
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Download failed: \(error.localizedDescription)"
