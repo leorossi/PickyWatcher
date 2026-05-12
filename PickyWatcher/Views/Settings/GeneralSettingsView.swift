@@ -2,52 +2,13 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
-// MARK: - Shared helper
-
-/// Returns the display name of an application given its bundle identifier.
-func resolvedPlayerName(for bundleID: String) -> String {
-    guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
-        return bundleID.components(separatedBy: ".").last?.capitalized ?? "Player"
-    }
-    let b = Bundle(url: appURL)
-    return b?.infoDictionary?["CFBundleDisplayName"] as? String
-        ?? b?.infoDictionary?["CFBundleName"] as? String
-        ?? appURL.deletingPathExtension().lastPathComponent
-}
-
-// MARK: - Settings root
-
-private enum SettingsSection: Hashable { case general }
-
-struct SettingsView: View {
-    @State private var selectedSection: SettingsSection? = .general
-
-    var body: some View {
-        NavigationSplitView {
-            List(selection: $selectedSection) {
-                Label("General", systemImage: "gearshape")
-                    .tag(SettingsSection.general)
-            }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(160)
-        } detail: {
-            switch selectedSection ?? .general {
-            case .general: GeneralSettingsView()
-            }
-        }
-        .frame(minWidth: 520, minHeight: 260)
-    }
-}
-
-// MARK: - General panel
-
 struct GeneralSettingsView: View {
     @AppStorage("defaultPlayerBundleID") private var playerBundleID = "org.videolan.vlc"
 
     private var playerURL: URL? {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: playerBundleID)
     }
-    private var playerName: String { resolvedPlayerName(for: playerBundleID) }
+    private var playerName: String { PlayerService.name(for: playerBundleID) }
     private var playerIcon: NSImage? {
         guard let url = playerURL else { return nil }
         return NSWorkspace.shared.icon(forFile: url.path)

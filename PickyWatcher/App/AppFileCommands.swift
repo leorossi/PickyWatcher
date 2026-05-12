@@ -7,14 +7,6 @@ extension Notification.Name {
     static let openRecentFileRequest = Notification.Name("PickyWatcher.openRecentFileRequest")
 }
 
-// MARK: - Model
-
-struct RecentFile: Codable {
-    let displayName: String
-    let path: String
-    let bookmarkData: Data
-}
-
 // MARK: - Commands
 
 struct AppFileCommands: Commands {

@@ -6,7 +6,7 @@ struct ContentToolbar: View {
     @Bindable var vm: ContentViewModel
 
     @AppStorage("defaultPlayerBundleID") private var playerBundleID = "org.videolan.vlc"
-    private var playerShortName: String { resolvedPlayerName(for: playerBundleID) }
+    private var playerShortName: String { PlayerService.name(for: playerBundleID) }
 
     var body: some View {
         HStack(spacing: 12) {
